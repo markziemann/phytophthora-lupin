@@ -11,7 +11,8 @@ theme: cosmo
 
 Source: https://github.com/markziemann/phytophthora-lupin
 
-Vew the reports: http://118.138.234.73/public/barry/
+Vew the reports:
+http://ziemann-lab.net/public/barry/stats.html
 
 ## Intro
 
@@ -119,16 +120,23 @@ la <- y[grep("IUM83",rownames(y),invert=TRUE),]
 dim(la)
 
 barplot(colSums(y),horiz=TRUE,las=1,xlab="total number of assigned reads")
+grid()
 
 barplot(colSums(pc),horiz=TRUE,las=1,xlab="number of PC assigned reads")
+grid()
 
 barplot(colSums(la),horiz=TRUE,las=1,xlab="number of LA assigned reads")
+grid()
 
 barplot(log10(colSums(pc)),horiz=TRUE,las=1,xlab="log10 number of PC assigned reads")
+grid()
 
 barplot(log10(colSums(la)),horiz=TRUE,las=1,xlab="log10 number of LA assigned reads")
+grid()
 
-barplot( colSums(pc)/colSums(y), horiz=TRUE,las=1,xlab="proportion of PC/total reads" )
+barplot( colSums(pc)/colSums(y), horiz=TRUE,las=1,
+  xlim=c(0,1),xlab="proportion of PC/total reads" )
+grid()
 
 # revert to defaults
 par(mar=c(5.1,4.1,4.1,2.1))
@@ -142,17 +150,17 @@ par(mar=c(5.1,4.1,4.1,2.1))
 
 mds <- cmdscale(dist(t(y)))
 plot(mds*1.05, xlab="Coordinate 1", ylab="Coordinate 2", type = "p",pch=19,col="lightblue",bty="n")
-text(mds, labels=colnames(y)) 
+text(mds, labels=colnames(y),cex=0.9) 
 mtext("overall MDS plot")
 
 mds <- cmdscale(dist(t(pc)))
 plot(mds*1.05, xlab="Coordinate 1", ylab="Coordinate 2", type = "p",pch=19,col="lightblue",bty="n")
-text(mds, labels=colnames(pc))
+text(mds, labels=colnames(pc), cex=0.9)
 mtext("Pc MDS plot")
 
 mds <- cmdscale(dist(t(la)))
 plot(mds*1.05, xlab="Coordinate 1", ylab="Coordinate 2", type = "p",pch=19,col="lightblue",bty="n")
-text(mds, labels=colnames(la))
+text(mds, labels=colnames(la), cex=0.9)
 mtext("La MDS plot")
 
 ```
