@@ -19,23 +19,37 @@ Phytophthora infected Lupinus angustifolius root.
 
 ## Reference genome info
 
-Here is the reference informtion
+Here is the reference information
 
 Lupinus angustifolius from Ensembl
-
 Lupinus_angustifolius.LupAngTanjil_v1.0.49.gtf.gz
-
 Lupinus_angustifolius.LupAngTanjil_v1.0.dna_sm.toplevel.fa.gz
 
-Phytophthora cinnamomi from FungiDB 21st Jan 2021
+Phytophthora cinnamomi genomic information obtained from a new assembly found on genbank
+https://ftp.ncbi.nlm.nih.gov/genomes/genbank/protozoa/Phytophthora_cinnamomi/latest_assembly_versions/GCA_018691715.1_ASM1869171v1/
 
-https://fungidb.org/common/downloads/Current_Release/PcinnamomiCBS144-22/gff/data/FungiDB-50_PcinnamomiCBS144-22.gff
-
-https://fungidb.org/common/downloads/Current_Release/PcinnamomiCBS144-22/fasta/data/FungiDB-50_PcinnamomiCBS144-22_Genome.fasta
-
-Pc gff file was converted to gtf with gffread.
 fasta files were combined before indexing
 gtf files were combined before indexing
+index created by STAR
+
+## Splitting genes
+
+Based on the below genome annotation data, we classified genes with the names containing "Tanjil" and
+"ENSRNA" as belonging to Lupin and genes containing "IUM83" belonging to lupin
+
+(base) ziemannm@bio-g-2:~/barry/ref3$ grep -c Tanjil *gtf
+combined.gtf:497300
+GCA_018691715.1_ASM1869171v1_genomic.gtf:0
+Lupinus_angustifolius.LupAngTanjil_v1.0.49.gtf:497300
+(base) ziemannm@bio-g-2:~/barry/ref3$ grep -c IUM83 *gtf
+combined.gtf:191926
+GCA_018691715.1_ASM1869171v1_genomic.gtf:191926
+Lupinus_angustifolius.LupAngTanjil_v1.0.49.gtf:0
+(base) ziemannm@bio-g-2:~/barry/ref3$ grep -c ENS *gtf
+combined.gtf:6291
+GCA_018691715.1_ASM1869171v1_genomic.gtf:3
+Lupinus_angustifolius.LupAngTanjil_v1.0.49.gtf:6288
+
 
 ## Data processing
 
@@ -89,14 +103,19 @@ QC analysis of counts and split by species.
 
 ```{r,split,fig.width=8,fig.height=8}
 
+# make sure all genes are accounted for
+dim(y)
+length(grep("ENS",rownames(y)))
+length(grep("Tanjil",rownames(y)))
+length(grep("IUM83",rownames(y)))
+length(grep("ENS",rownames(y))) + length(grep("Tanjil",rownames(y))) + length(grep("IUM83",rownames(y)))
+
 par(mar=c(5,10,4,2))
 
-dim(y)
-
-pc <- y[grep("PHYCI",rownames(y)),]
+pc <- y[grep("IUM83",rownames(y)),]
 dim(pc)
 
-la <- y[grep("PHYCI",rownames(y),invert=TRUE),]
+la <- y[grep("IUM83",rownames(y),invert=TRUE),]
 dim(la)
 
 barplot(colSums(y),horiz=TRUE,las=1,xlab="total number of assigned reads")
@@ -137,6 +156,41 @@ text(mds, labels=colnames(la))
 mtext("La MDS plot")
 
 ```
+
+## Stable genes
+
+The goal here is to identify genes whose expression is stable over a range of samples to use as qPCR controls.
+
+
+```{r,stable_pc}
+
+pcx <- pc[,grep("P",colnames(pc))]
+pcx <- pcx[which(rowMeans(pcx)>10),]
+
+pcy <- pcx/colSums(pcx) * 1000000
+
+
+pcy_means <- rowMeans(pcy)
+pcy_cv <- apply(pcy,1,sd) / rowMeans(pcy) *100
+pcy_logmeans <- log10(rowMeans(pcy))
+
+hist(pcy_cv,xlab="%CoV")
+hist(pcy_logmeans,xlab="log10 CPM")
+
+plot(pcy_logmeans,pcy_cv,xlab="baseline expression (log10 CPM)",ylab="coefficient of variation (%)")
+grid()
+abline(h=110, v=2.5,col="red")
+
+pcydf <- data.frame(pcy_logmeans,pcy_cv)
+
+pcydf_subset <- subset(pcydf,pcy_logmeans>2.5 & pcy_cv<110)
+
+pcy[which(rownames(pcy)  %in%  rownames(pcydf_subset)),]
+
+pcydf_subset
+
+```
+
 
 ## Contrasts 
 
@@ -318,16 +372,44 @@ Here execute the analysis.
 ```{r,de_run,fig.width=8,fig.height=8}
 
 pc1de <- run_de(sspc1,pc1)
+head(as.data.frame(pc1de),20)
+write.table(pc1de,file="pc1de.tsv",quote=FALSE,sep="\t")
+
 pc2de <- run_de(sspc2,pc2)
+head(as.data.frame(pc2de),20)
+write.table(pc2de,file="pc2de.tsv",quote=FALSE,sep="\t")
+
 pc3de <- run_de(sspc3,pc3)
+head(as.data.frame(pc3de),20)
+write.table(pc3de,file="pc3de.tsv",quote=FALSE,sep="\t")
+
 pc4de <- run_de(sspc4,pc4)
+head(as.data.frame(pc4de),20)
+write.table(pc4de,file="pc4de.tsv",quote=FALSE,sep="\t")
+
 pc5de <- run_de(sspc5,pc5)
+head(as.data.frame(pc5de),20)
+write.table(pc5de,file="pc5de.tsv",quote=FALSE,sep="\t")
 
 la1de <- run_de(ssla1,la1)
+head(as.data.frame(la1de),20)
+write.table(la1de,file="la1de.tsv",quote=FALSE,sep="\t")
+
 la2de <- run_de(ssla2,la2)
+head(as.data.frame(la2de),20)
+write.table(la2de,file="la2de.tsv",quote=FALSE,sep="\t")
+
 la3de <- run_de(ssla3,la3)
+head(as.data.frame(la3de),20)
+write.table(la3de,file="la3de.tsv",quote=FALSE,sep="\t")
+
 la4de <- run_de(ssla4,la4)
+head(as.data.frame(la4de),20)
+write.table(la4de,file="la4de.tsv",quote=FALSE,sep="\t")
+
 la5de <- run_de(ssla5,la5)
+head(as.data.frame(la5de),20)
+write.table(la5de,file="la5de.tsv",quote=FALSE,sep="\t")
 
 ```
 

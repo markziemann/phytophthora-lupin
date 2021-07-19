@@ -1,5 +1,5 @@
 #!/bin/bash
-REF=../ref2
+REF=../ref3
 
 
 run_pipeline(){
